@@ -1,0 +1,45 @@
+openapi: 3.0.3
+info:
+  title: API Atendimento AI (MCP)
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /webhook/atendimento-ai:
+    post:
+      summary: Recebe o JSON do atendimento e retorna o resumo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+            examples:
+              exemplo:
+                value:
+                  body:
+                    texts:
+                      - cn: { "id": "28408DAF-...", "numero": 69380 }
+                        patient_id: "123"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requestId:
+                    type: string
+                  provider:
+                    type: string
+                  model:
+                    type: string
+                  latencyMs:
+                    type: integer
+                  summary:
+                    type: string
+        "400":
+          description: Requisição inválida
+        "500":
+          description: Erro interno

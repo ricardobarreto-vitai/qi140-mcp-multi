@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d appdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # App
+      API_PORT: 8080
+      PROMPT_FILE: /app/prompts/prompt.txt
+      # LLM Provider selection
+      PROVIDER: ${PROVIDER:-GENERIC}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal}
+      LLM_PORT: ${LLM_PORT:-8000}
+      LLM_MODEL: ${LLM_MODEL:-meta.llama-3.2-90b-vision-instruct}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      # DB
+      DATABASE_URL: postgres://appuser:apppass@postgres:5432/appdb
+      # Swagger
+      SWAGGER_ENABLE: ${SWAGGER_ENABLE:-true}
+      # Optional MCP
+      MCP_ENABLE: ${MCP_ENABLE:-false}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./prompts:/app/prompts:ro
+    restart: unless-stopped
+
+volumes:
+  pgdata:
